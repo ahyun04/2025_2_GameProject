@@ -17,19 +17,24 @@ public class DeliveryDriver : MonoBehaviour
     public int deliveryCount = 0;
 
     [System.Serializable]
-    public class DriveryEvents
+    public class DriverEvents
     {
         [Header("이동 Event")]
         public UnityEvent OnMoveStarted;
-        public UnityEvent OnMoveStoped;
+        public UnityEvent OnMoveStopped;
 
         [Header("상태 변화 Event")]
-        public UnityEvent<float> OnMoveChanged;    
+        public UnityEvent<float> OnMoneyChanged;    
         public UnityEvent<float> OnBatteryChanged;
         public UnityEvent<int> OnDeliveryCountChanged;
+
+        [Header("경고 Event")]
+        public UnityEvent OnLowBattery;
+        public UnityEvent OnLowBatteryEmpty;
+        public UnityEvent OnDeliveryCompleted;
     }
 
-    public DiverEvents driverEvents;
+    public DriverEvents driverEvents;
 
     public bool isMoving = false;
 
@@ -37,8 +42,8 @@ public class DeliveryDriver : MonoBehaviour
     void Start()
     {
         driverEvents.OnMoneyChanged?.Invoke(currentMoney);
-        driverEvents.OnMoneyChanged?.Invoke(batteryLevel);
-        driverEvents.OnMoneyChanged?.Invoke(deliveryCount);
+        driverEvents.OnBatteryChanged?.Invoke(batteryLevel);
+        driverEvents.OnDeliveryCountChanged?.Invoke(deliveryCount);
     }
 
     private void Update()
@@ -49,53 +54,44 @@ public class DeliveryDriver : MonoBehaviour
 
     void HandleMovement()
     {
-        if(batteryLevel <= 0)
+        //배터리 체크
+        if (batteryLevel <= 0)
         {
-            if(isMoving)
+            if (isMoving)
             {
-
+                StopMoving();
             }
             return;
         }
-    }
 
-    void StopMovine()
-    {
-        if ((batteryLevel <= 0))
-        {
-            if(isMoving)
-            {
-                StopMovine();
-            }
-            return ;
-        }
-
+        //입력 받기
         float horizontal = Input.GetAxis("Horizontal");
-        float verical = Input.GetAxis("vertical");
+        float vertical = Input.GetAxis("Vertical");
 
-        Vector3 moveDirection = new Vector3(horizontal, 0, verical);
+        Vector3 moveDirection = new Vector3(horizontal, 0, vertical);
 
-        if(moveDirection.magnitude > 0.1f)
+        if (moveDirection.magnitude > 0.1f)
         {
-            if(isMoving)
+            if (!isMoving)
             {
                 StartMoving();
             }
 
+            //이동 처리
             moveDirection = moveDirection.normalized;
             transform.Translate(moveDirection * moveSpeed * Time.deltaTime, Space.World);
 
-            if(moveDirection != Vector3.zero)
+            //회전 처리
+            if (moveDirection != Vector3.zero)
             {
                 Quaternion targetRotation = Quaternion.LookRotation(moveDirection);
                 transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, rotationSpeed * Time.deltaTime);
-
             }
-            ChangeBattery(-Time.deltaTime * 3.0f);
+            ChangeBattery(-Time.deltaTime * 3.0f);      //이동할때마다 베터리 소모 
         }
         else
         {
-            if(isMoving)
+            if (isMoving)
             {
                 StopMoving();
             }
@@ -129,7 +125,7 @@ public class DeliveryDriver : MonoBehaviour
     void StopMoving()
     {
         isMoving = false;
-        driverEvents.OnMoveStoped?.Invoke();
+        driverEvents.OnMoveStopped?.Invoke();
     }
 
     void UpdateBattery()

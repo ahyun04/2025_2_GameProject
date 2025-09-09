@@ -32,7 +32,7 @@ public class Building : MonoBehaviour
             Material mat = renderer.material;
             switch (BuildingType)
             {
-                case BuildingTypes.Rostaurant:
+                case BuildingTypes.Restaurant:
                     mat.color = Color.red;
                     BuildingName = "음식점";
                     break;
@@ -60,7 +60,7 @@ public class Building : MonoBehaviour
     {
         switch (BuildingType)
         {
-            case BuildingTypes.Rostaurant:
+            case BuildingTypes.Restaurant:
                 Debug.Log($"{BuildingName} 에서 음식을 픽업했습니다");
                 break;
             case BuildingTypes.Coustomer:
