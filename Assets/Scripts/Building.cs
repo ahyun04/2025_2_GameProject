@@ -18,10 +18,14 @@ public class Building : MonoBehaviour
     }
 
     public BuildingEvents buildingEvents;
+
+    private DeliveryOrderSystem orderSystem;
     // Start is called before the first frame update
     void Start()
     {
         SetupBuilding();
+        orderSystem = FindAnyObjectByType<DeliveryOrderSystem>();
+        CreateNameTag  ();
     }
 
     void SetupBuilding()
@@ -34,44 +38,46 @@ public class Building : MonoBehaviour
             {
                 case BuildingTypes.Restaurant:
                     mat.color = Color.red;
-                    BuildingName = "음식점";
                     break;
 
                 case BuildingTypes.Coustomer:
                     mat.color = Color.green;
-                    BuildingName = "고객 집";
                     break;
 
                 case BuildingTypes.ChargingStation:
                     mat.color = Color.yellow;
-                    BuildingName = "충전소";
                     break;
             }
         }
-
         Collider col = GetComponent<Collider>();
-        if (col != null)
-        {
-            col.isTrigger = true;
-        }
-
+        if (col != null) { col.isTrigger = true; }
     }
     void HandleDriverService(DeliveryDriver driver)
     {
         switch (BuildingType)
         {
             case BuildingTypes.Restaurant:
-                Debug.Log($"{BuildingName} 에서 음식을 픽업했습니다");
+                if(orderSystem != null)
+                {
+                    orderSystem.OnDriverEnteredRestaurant(this);
+                }
                 break;
             case BuildingTypes.Coustomer:
-                Debug.Log($"{BuildingName} 에서 배달 완료");
-                driver.CompleteDelivery();
+                if (orderSystem != null)
+                {
+                    orderSystem.OnDliverEnteredCustorm(this);
+                }
+                else
+                {
+                    driver.CompleteDelivery();
+                }
                 break;
             case BuildingTypes.ChargingStation:
-                Debug.Log($"{BuildingName} 에서 배터리 충전 했습니다");
                 driver.ChargeBattery();
                 break;
         }
+
+        buildingEvents.OnServiceUsed?.Invoke(BuildingType);
     }
     void OnTriggerEnter(Collider other)
     {
@@ -91,5 +97,21 @@ public class Building : MonoBehaviour
             buildingEvents.OnDriverExited?.Invoke(BuildingName);
             Debug.Log($"{BuildingName} 을 떠났습니다.");
         }
+    }
+
+    void CreateNameTag()
+    {
+        GameObject nameTag = new GameObject("NameTag");
+        nameTag.transform.SetParent(transform);
+        nameTag.transform.localPosition = Vector3.up * 1.5f;
+
+        TextMesh textMesh = nameTag.AddComponent<TextMesh>();
+        textMesh.text = BuildingName;
+        textMesh.characterSize = 0.2f;
+        textMesh.anchor = TextAnchor.MiddleCenter;
+        textMesh.color = Color.white;
+        textMesh.fontSize = 20;
+
+        nameTag.AddComponent<Bildboard>();
     }
 }
